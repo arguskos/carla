@@ -20,6 +20,8 @@ Use ARROWS or WASD keys for control.
     Q            : toggle reverse
     Space        : hand-brake
     P            : toggle autopilot
+    M            : toggle manual transmission
+    ,/.          : gear up/down
 
     TAB          : change sensor position
     `            : next sensor
@@ -81,10 +83,12 @@ try:
     from pygame.locals import K_9
     from pygame.locals import K_BACKQUOTE
     from pygame.locals import K_BACKSPACE
+    from pygame.locals import K_COMMA
     from pygame.locals import K_DOWN
     from pygame.locals import K_ESCAPE
     from pygame.locals import K_F1
     from pygame.locals import K_LEFT
+    from pygame.locals import K_PERIOD
     from pygame.locals import K_RIGHT
     from pygame.locals import K_SLASH
     from pygame.locals import K_SPACE
@@ -94,6 +98,7 @@ try:
     from pygame.locals import K_c
     from pygame.locals import K_d
     from pygame.locals import K_h
+    from pygame.locals import K_m
     from pygame.locals import K_p
     from pygame.locals import K_q
     from pygame.locals import K_r
@@ -207,6 +212,8 @@ class KeyboardControl(object):
         self._steer_cache = 0.0
         world.vehicle.set_autopilot(self._autopilot_enabled)
         world.hud.notification("Press 'H' or '?' for help.", seconds=4.0)
+        weak_vehicle = weakref.ref(world.vehicle)
+        world.world.on_tick(lambda _: self._on_tick(weak_vehicle))
 
     def parse_events(self, world, clock):
         for event in pygame.event.get():
@@ -235,6 +242,13 @@ class KeyboardControl(object):
                     world.camera_manager.toggle_recording()
                 elif event.key == K_q:
                     self._control.reverse = not self._control.reverse
+                elif event.key == K_m:
+                    self._control.manual_gear_shift = not self._control.manual_gear_shift
+                    world.hud.notification('%s Transmission' % ('Manual' if self._control.manual_gear_shift else 'Automatic'))
+                elif event.key == K_COMMA:
+                    self._control.gear = max(-1, self._control.gear - 1)
+                elif event.key == K_PERIOD:
+                    self._control.gear = self._control.gear + 1
                 elif event.key == K_p:
                     self._autopilot_enabled = not self._autopilot_enabled
                     world.vehicle.set_autopilot(self._autopilot_enabled)
@@ -260,6 +274,12 @@ class KeyboardControl(object):
     @staticmethod
     def _is_quit_shortcut(key):
         return (key == K_ESCAPE) or (key == K_q and pygame.key.get_mods() & KMOD_CTRL)
+
+    def _on_tick(self, weak_vehicle):
+        vehicle = weak_vehicle()
+        if not vehicle:
+            return
+        self._control = vehicle.get_vehicle_control()
 
 
 # ==============================================================================
@@ -324,6 +344,8 @@ class HUD(object):
             ('Brake:', c.brake, 0.0, 1.0),
             ('Reverse:', c.reverse),
             ('Hand brake:', c.hand_brake),
+            ('Manual:', c.manual_gear_shift),
+            'Gear:        %s' % {-1: 'R', 0: 'N'}.get(c.gear, c.gear),
             '',
             'Collision:',
             collision,
