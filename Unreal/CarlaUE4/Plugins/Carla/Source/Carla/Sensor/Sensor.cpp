@@ -17,7 +17,7 @@ ASensor::ASensor(const FObjectInitializer &ObjectInitializer)
   Mesh->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
   Mesh->bHiddenInGame = true;
   Mesh->CastShadow = false;
-  Mesh->PostPhysicsComponentTick.bCanEverTick = false;
+  //Mesh->PostPhysicsComponentTick.bCanEverTick = false;
   RootComponent = Mesh;
 }
 

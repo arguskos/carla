@@ -43,6 +43,14 @@ public:
   /// @{
 public:
 
+  // My Carla
+  //UFUNCTION(BlueprintImplementableEvent)
+  //virtual void Dead();
+  UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "MyCarla")
+  void OnDead();
+  virtual void BeginDestroy() override;
+  
+
   /// Vehicle control currently applied to this vehicle.
   UFUNCTION(Category = "CARLA Wheeled Vehicle", BlueprintCallable)
   const FVehicleControl &GetVehicleControl() const

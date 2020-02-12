@@ -256,6 +256,12 @@ public:
     check(CaptureRenderTarget != nullptr);
     FPixelReader::SavePixelsToDisk(*CaptureRenderTarget, FilePath);
   }
+  
+  // MY Carla
+  UFUNCTION(BlueprintCallable, Category = "MyCarla")
+  void AddActorToHidden(AActor* actor);
+
+	
 
 protected:
 

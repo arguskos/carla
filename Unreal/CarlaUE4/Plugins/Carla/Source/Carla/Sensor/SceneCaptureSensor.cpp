@@ -481,6 +481,12 @@ void ASceneCaptureSensor::EndPlay(const EEndPlayReason::Type EndPlayReason)
   SCENE_CAPTURE_COUNTER = 0u;
 }
 
+void ASceneCaptureSensor::AddActorToHidden(AActor* actor)
+{
+	CaptureComponent2D->HideActorComponents(actor);
+}
+
+
 // =============================================================================
 // -- Local static functions implementations -----------------------------------
 // =============================================================================
