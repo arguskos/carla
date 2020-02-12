@@ -36,7 +36,11 @@ namespace rpc {
     static WeatherParameters MidRainSunset;
     static WeatherParameters HardRainSunset;
     static WeatherParameters SoftRainSunset;
-
+    static WeatherParameters MidSnowNoon;
+    static WeatherParameters HardSnowNoon;
+    static WeatherParameters MidSnowSunset; 
+    static WeatherParameters HardSnowSunset;
+   
     /// @}
 
     WeatherParameters() = default;
@@ -44,6 +48,7 @@ namespace rpc {
     WeatherParameters(
         float in_cloudiness,
         float in_precipitation,
+        float in_snowness,
         float in_precipitation_deposits,
         float in_wind_intensity,
         float in_sun_azimuth_angle,
@@ -53,6 +58,7 @@ namespace rpc {
         float in_wetness)
       : cloudiness(in_cloudiness),
         precipitation(in_precipitation),
+        snowness(in_snowness),
         precipitation_deposits(in_precipitation_deposits),
         wind_intensity(in_wind_intensity),
         sun_azimuth_angle(in_sun_azimuth_angle),
@@ -63,6 +69,7 @@ namespace rpc {
 
     float cloudiness = 0.0f;
     float precipitation = 0.0f;
+    float snowness = 0.0f;
     float precipitation_deposits = 0.0f;
     float wind_intensity = 0.0f;
     float sun_azimuth_angle = 0.0f;
@@ -76,6 +83,7 @@ namespace rpc {
     WeatherParameters(const FWeatherParameters &Weather)
       : cloudiness(Weather.Cloudiness),
         precipitation(Weather.Precipitation),
+        snowness(Weather.Snowness),
         precipitation_deposits(Weather.PrecipitationDeposits),
         wind_intensity(Weather.WindIntensity),
         sun_azimuth_angle(Weather.SunAzimuthAngle),
@@ -88,6 +96,7 @@ namespace rpc {
       FWeatherParameters Weather;
       Weather.Cloudiness = cloudiness;
       Weather.Precipitation = precipitation;
+      Weather.Snowness = snowness;
       Weather.PrecipitationDeposits = precipitation_deposits;
       Weather.WindIntensity = wind_intensity;
       Weather.SunAzimuthAngle = sun_azimuth_angle;
@@ -104,6 +113,7 @@ namespace rpc {
       return
           cloudiness != rhs.cloudiness ||
           precipitation != rhs.precipitation ||
+          snowness != rhs.snowness ||
           precipitation_deposits != rhs.precipitation_deposits ||
           wind_intensity != rhs.wind_intensity ||
           sun_azimuth_angle != rhs.sun_azimuth_angle ||
@@ -120,6 +130,7 @@ namespace rpc {
     MSGPACK_DEFINE_ARRAY(
         cloudiness,
         precipitation,
+        snowness,
         precipitation_deposits,
         wind_intensity,
         sun_azimuth_angle,

@@ -128,10 +128,13 @@ def main():
     world = client.get_world()
 
     weather = Weather(world.get_weather())
-
+    print(weather.weather)
     elapsed_time = 0.0
+    weather.weather.snowness = 100
+    world.set_weather(weather.weather)
+    print(weather.weather)
 
-    while True:
+    while False:
         timestamp = world.wait_for_tick(seconds=30.0).timestamp
         elapsed_time += timestamp.delta_seconds
         if elapsed_time > update_freq:

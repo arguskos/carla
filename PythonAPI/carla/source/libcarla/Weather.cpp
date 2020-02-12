@@ -13,6 +13,7 @@ namespace rpc {
 
   std::ostream &operator<<(std::ostream &out, const WeatherParameters &weather) {
     out << "WeatherParameters(cloudiness=" << std::to_string(weather.cloudiness)
+        << ", snowness=" << std::to_string(weather.snowness)
         << ", precipitation=" << std::to_string(weather.precipitation)
         << ", precipitation_deposits=" << std::to_string(weather.precipitation_deposits)
         << ", wind_intensity=" << std::to_string(weather.wind_intensity)
@@ -29,9 +30,10 @@ void export_weather() {
   namespace cr = carla::rpc;
 
   auto cls = class_<cr::WeatherParameters>("WeatherParameters")
-    .def(init<float, float, float, float, float, float, float, float, float>(
+    .def(init<float, float, float, float, float, float, float, float, float, float>(
         (arg("cloudiness")=0.0f,
          arg("precipitation")=0.0f,
+         arg("snowness")=0.0f,
          arg("precipitation_deposits")=0.0f,
          arg("wind_intensity")=0.0f,
          arg("sun_azimuth_angle")=0.0f,
@@ -41,6 +43,7 @@ void export_weather() {
          arg("wetness")=0.0f)))
     .def_readwrite("cloudiness", &cr::WeatherParameters::cloudiness)
     .def_readwrite("precipitation", &cr::WeatherParameters::precipitation)
+    .def_readwrite("snowness", &cr::WeatherParameters::snowness)
     .def_readwrite("precipitation_deposits", &cr::WeatherParameters::precipitation_deposits)
     .def_readwrite("wind_intensity", &cr::WeatherParameters::wind_intensity)
     .def_readwrite("sun_azimuth_angle", &cr::WeatherParameters::sun_azimuth_angle)
@@ -68,4 +71,10 @@ void export_weather() {
   cls.attr("MidRainSunset") = cr::WeatherParameters::MidRainSunset;
   cls.attr("HardRainSunset") = cr::WeatherParameters::HardRainSunset;
   cls.attr("SoftRainSunset") = cr::WeatherParameters::SoftRainSunset;
+  cls.attr("MidSnowNoon") = cr::WeatherParameters::MidSnowNoon;
+  cls.attr("HardSnowNoon") = cr::WeatherParameters::HardSnowNoon;
+  cls.attr("MidSnowSunset") = cr::WeatherParameters::MidSnowSunset;
+  cls.attr("HardSnowSunset") = cr::WeatherParameters::HardSnowSunset;
+
+
 }
