@@ -75,6 +75,9 @@ void export_weather() {
   cls.attr("HardSnowNoon") = cr::WeatherParameters::HardSnowNoon;
   cls.attr("MidSnowSunset") = cr::WeatherParameters::MidSnowSunset;
   cls.attr("HardSnowSunset") = cr::WeatherParameters::HardSnowSunset;
+  cls.attr("SnowRoadSunset") = cr::WeatherParameters::SnowRoadSunset;
+  cls.attr("SnowRoadNoon") = cr::WeatherParameters::SnowRoadNoon;
+
 
 
 }

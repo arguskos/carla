@@ -27,10 +27,12 @@ namespace rpc {
   WP WP::MidRainSunset   = {     80.0f,    30.0f, 0.0f,      50.0f,   0.40f,     0.0f,     15.0f,     0.0f,     0.0f,    0.0f};
   WP WP::HardRainSunset  = {     80.0f,    60.0f, 0.0f,     100.0f,   1.00f,     0.0f,     15.0f,     0.0f,     0.0f,    0.0f};
   WP WP::SoftRainSunset  = {     90.0f,    15.0f, 0.0f,      50.0f,   0.35f,     0.0f,     15.0f,     0.0f,     0.0f,    0.0f};
-  WP WP::MidSnowNoon     = {     80.0f,     0.0f, 50.0f,       0.0f,   0.35f,     0.0f,     75.0f,     0.0f,     0.0f,    0.0f};
-  WP WP::HardSnowNoon    = {     80.0f,     0.0f, 100.0f,       0.0f,  1.0f,     0.0f,     75.0f,     0.0f,     0.0f,    0.0f};
-  WP WP::MidSnowSunset   = {     80.0f,     0.0f, 50.0f,      0.0f,   0.40f,     0.0f,     15.0f,     0.0f,     0.0f,    0.0f};
-  WP WP::HardSnowSunset  = {     80.0f,     0.0f, 100.0f,     0.0f,   1.00f,     0.0f,     15.0f,     0.0f,     0.0f,    0.0f};
+  WP WP::MidSnowNoon     = {     80.0f,     0.0f, 50.0f,      50.0f,   0.35f,     0.0f,     75.0f,     0.0f,     0.0f,    0.0f};
+  WP WP::HardSnowNoon    = {     80.0f,     0.0f, 100.0f,     100.0f,  1.0f,     0.0f,     75.0f,     0.0f,     0.0f,    0.0f};
+  WP WP::MidSnowSunset   = {     80.0f,     0.0f, 50.0f,      50.0f,   0.40f,     0.0f,     15.0f,     0.0f,     0.0f,    0.0f};
+  WP WP::HardSnowSunset  = {     80.0f,     0.0f, 100.0f,     100.0f,   1.00f,     0.0f,     15.0f,     0.0f,     0.0f,    0.0f};
+  WP WP::SnowRoadSunset  = {     20.0f,     0.0f, 5.0f,      50.0f,   0.35f,     0.0f,     15.0f,     0.0f,     0.0f,    0.0f};
+  WP WP::SnowRoadNoon    = {     20.0f,     0.0f, 5.0f,      50.0f,   0.35f,     0.0f,     75.0f,     0.0f,     0.0f,    0.0f};
  
 
 

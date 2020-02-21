@@ -435,12 +435,14 @@ class HUD(object):
         self._server_clock = pygame.time.Clock()
 
     def on_world_tick(self, timestamp):
-        self._server_clock.tick()
-        self.server_fps = self._server_clock.get_fps()
-        self.frame = timestamp.frame
-        self.simulation_time = timestamp.elapsed_seconds
+        pass
+        # self._server_clock.tick()
+        # self.server_fps = self._server_clock.get_fps()
+        # self.frame = timestamp.frame
+        # self.simulation_time = timestamp.elapsed_seconds
 
     def tick(self, world, clock):
+        return 
         self._notifications.tick(world, clock)
         if not self._show_info:
             return
@@ -512,6 +514,7 @@ class HUD(object):
         self._notifications.set_text('Error: %s' % text, (255, 0, 0))
 
     def render(self, display):
+        return 
         if self._show_info:
             info_surface = pygame.Surface((220, self.dim[1]))
             info_surface.set_alpha(100)
