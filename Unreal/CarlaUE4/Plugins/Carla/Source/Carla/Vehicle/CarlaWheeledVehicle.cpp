@@ -32,17 +32,17 @@ ACarlaWheeledVehicle::ACarlaWheeledVehicle(const FObjectInitializer& ObjectIniti
 
 ACarlaWheeledVehicle::~ACarlaWheeledVehicle() {}
 
-void ACarlaWheeledVehicle::BeginDestroy() 
-{
-  Super::BeginDestroy();
-  this->OnDead();
-  UE_LOG(LogTemp, Warning, TEXT("Destroying vehicle"));
-}
+// void ACarlaWheeledVehicle::BeginDestroy() 
+// {
+//   Super::BeginDestroy();
+//   this->OnDead();
+//   UE_LOG(LogTemp, Warning, TEXT("Destroying vehicle"));
+// }
 
-void ACarlaWheeledVehicle::OnDead_Implementation()
-{
-	//remember to call super / parent function in BP!
-}
+// void ACarlaWheeledVehicle::OnDead_Implementation()
+// {
+// 	//remember to call super / parent function in BP!
+// }
 //
 //void ACarlaWheeledVehicle::Dead()
 //{

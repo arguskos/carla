@@ -46,9 +46,9 @@ public:
   // My Carla
   //UFUNCTION(BlueprintImplementableEvent)
   //virtual void Dead();
-  UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "MyCarla")
-  void OnDead();
-  virtual void BeginDestroy() override;
+  // UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "MyCarla")
+  // void OnDead();
+  // virtual void BeginDestroy() override;
   
 
   /// Vehicle control currently applied to this vehicle.
