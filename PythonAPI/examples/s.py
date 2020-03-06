@@ -50,8 +50,8 @@ class CameraManager(object):
         self.sensor = None
         self.surface = None
         self._parent = parent_actor
-        self.width = 1280
-        self.height = 720
+        self.width = 800
+        self.height = 600
         self.recording = False
         self.display = display
         bound_y = 0.5 + self._parent.bounding_box.extent.y
@@ -135,7 +135,7 @@ class CarlaSyncMode(object):
         self.frame = None
         self.delta_seconds = 1.0 / kwargs.get('fps', 20)
         self._queues = []
-        self.sync = False
+        self.sync = True
         self._settings = None
         self._server_clock = pygame.time.Clock()
         self.world.on_tick(self.on_world_tick)
@@ -239,20 +239,15 @@ def main():
         vehicle = world.spawn_actor(
             random.choice(blueprint_library.filter('vehicle.toyota.prius')),
             start_pose)
-        vehicle_controller = VehicleController(vehicle, controller)
+        vehicle.set_autopilot(True)
+        
+        # vehicle_controller = VehicleController(vehicle, controller)
         
  
       
         actor_list.append(vehicle)
-        # vehicle.set_simulate_physics(False)
-        camera_rgb = None
-        camera_rgb = world.spawn_actor(
-            blueprint_library.find('sensor.camera.rgb'),
-            carla.Transform(carla.Location(x=-5.5, z=2.8), carla.Rotation(pitch=-15)),
-            attach_to=vehicle)
-        actor_list.append(camera_rgb)
 
-        with CarlaSyncMode(world, camera_rgb, fps=25, vehicle=vehicle, display=display) as sync_mode:
+        with CarlaSyncMode(world, fps=2, vehicle=vehicle, display=display) as sync_mode:
             while True:
                 if should_quit():
                     return
@@ -260,13 +255,11 @@ def main():
                 #clock.tick() # basicly same shit but less acurate 
                 clock.tick_busy_loop(60)
 
-
-
                 # Advance the simulation and wait for the data.
                 snapshot, image_rgb = sync_mode.tick(timeout=2.0)
                 dt = snapshot.timestamp.delta_seconds
                 # dt2 = 1e-3 * clock.get_time()
-                vehicle_controller.tick(dt)
+                # vehicle_controller.tick(dt)
 
                 sync_mode.render()
                 # image_semseg.convert(carla.ColorConverter.CityScapesPalette)
