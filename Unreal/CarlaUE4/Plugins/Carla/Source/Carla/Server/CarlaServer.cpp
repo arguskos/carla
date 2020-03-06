@@ -33,6 +33,7 @@
 #include <carla/rpc/Vector3D.h>
 #include <carla/rpc/VehicleControl.h>
 #include <carla/rpc/VehiclePhysicsControl.h>
+#include <carla/rpc/VehicleLightState.h>
 #include <carla/rpc/WalkerBoneControl.h>
 #include <carla/rpc/WalkerControl.h>
 #include <carla/rpc/WeatherParameters.h>
@@ -40,6 +41,7 @@
 #include <compiler/enable-ue4-macros.h>
 
 #include <vector>
+#include <map>
 
 template <typename T>
 using R = carla::rpc::Response<T>;
@@ -69,6 +71,9 @@ public:
   {
     BindActions();
   }
+
+  /// Map of pairs < port , ip > with all the Traffic Managers active in the simulation
+  std::map<uint16_t, std::string> TrafficManagerInfo;
 
   carla::rpc::Server Server;
 
@@ -151,6 +156,47 @@ void FCarlaServer::FPimpl::BindActions()
   namespace cr = carla::rpc;
   namespace cg = carla::geom;
 
+  /// Looks for a Traffic Manager running on port
+  BIND_SYNC(is_traffic_manager_running) << [this] (uint16_t port) ->R<bool>
+  {
+    return (TrafficManagerInfo.find(port) != TrafficManagerInfo.end());
+  };
+
+  /// Gets a pair filled with the <IP, port> of the Trafic Manager running on port.
+  /// If there is no Traffic Manager running the pair will be ("", 0)
+  BIND_SYNC(get_traffic_manager_running) << [this] (uint16_t port) ->R<std::pair<std::string, uint16_t>>
+  {
+    auto it = TrafficManagerInfo.find(port);
+    if(it != TrafficManagerInfo.end()) {
+      return std::pair<std::string, uint16_t>(it->second, it->first);
+    }
+    return std::pair<std::string, uint16_t>("",0);
+  };
+
+  /// Add a new Traffic Manager running on <IP, port>
+  BIND_SYNC(add_traffic_manager_running) << [this] (std::pair<std::string, uint16_t> trafficManagerInfo) ->R<bool>
+  {
+    uint16_t port = trafficManagerInfo.second;
+    auto it = TrafficManagerInfo.find(port);
+    if(it == TrafficManagerInfo.end()) {
+      TrafficManagerInfo.insert(
+        std::pair<uint16_t, std::string>(port, trafficManagerInfo.first));
+      return true;
+    }
+    return false;
+
+  };
+
+  BIND_SYNC(destroy_traffic_manager) << [this] (uint16_t port) ->R<bool>
+  {
+    auto it = TrafficManagerInfo.find(port);
+    if(it != TrafficManagerInfo.end()) {
+      TrafficManagerInfo.erase(it);
+      return true;
+    }
+    return false;
+  };
+
   BIND_ASYNC(version) << [] () -> R<std::string>
   {
     return carla::version();
@@ -188,14 +234,22 @@ void FCarlaServer::FPimpl::BindActions()
     return R<void>::Success();
   };
 
+  BIND_SYNC(copy_opendrive_to_file) << [this](const std::string &opendrive) -> R<void>
+  {
+    REQUIRE_CARLA_EPISODE();
+    if (!Episode->LoadNewOpendriveEpisode(cr::ToFString(opendrive)))
+    {
+      RESPOND_ERROR("opendrive could not be correctly parsed");
+    }
+    return R<void>::Success();
+  };
+
   // ~~ Episode settings and info ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   BIND_SYNC(get_episode_info) << [this]() -> R<cr::EpisodeInfo>
   {
     REQUIRE_CARLA_EPISODE();
-    return cr::EpisodeInfo{
-             Episode->GetId(),
-                 BroadcastStream.token()};
+    return cr::EpisodeInfo{Episode->GetId(), BroadcastStream.token()};
   };
 
   BIND_SYNC(get_map_info) << [this]() -> R<cr::MapInfo>
@@ -414,7 +468,7 @@ void FCarlaServer::FPimpl::BindActions()
     FVector CurrentLocation = CurrentTransform.GetLocation();
     NewLocation.Z += 90.0f; // move point up because in Unreal walker is centered in the middle height
 
-    // if difference between Z position is small, then we keep current, otherwise we set the new one 
+    // if difference between Z position is small, then we keep current, otherwise we set the new one
     // (to avoid Z fighting position and falling pedestrians)
     if (NewLocation.Z - CurrentLocation.Z < 100.0f)
       NewLocation.Z = CurrentLocation.Z;
@@ -528,6 +582,24 @@ void FCarlaServer::FPimpl::BindActions()
     return cr::VehiclePhysicsControl(Vehicle->GetVehiclePhysicsControl());
   };
 
+  BIND_SYNC(get_vehicle_light_state) << [this](
+      cr::ActorId ActorId) -> R<cr::VehicleLightState>
+  {
+    REQUIRE_CARLA_EPISODE();
+    auto ActorView = Episode->FindActor(ActorId);
+    if (!ActorView.IsValid())
+    {
+      RESPOND_ERROR("unable to get actor physics control: actor not found");
+    }
+    auto Vehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
+    if (Vehicle == nullptr)
+    {
+      RESPOND_ERROR("unable to get actor physics control: actor is not a vehicle");
+    }
+
+    return cr::VehicleLightState(Vehicle->GetVehicleLightState());
+  };
+
   BIND_SYNC(apply_physics_control) << [this](
       cr::ActorId ActorId,
       cr::VehiclePhysicsControl PhysicsControl) -> R<void>
@@ -545,6 +617,27 @@ void FCarlaServer::FPimpl::BindActions()
     }
 
     Vehicle->ApplyVehiclePhysicsControl(FVehiclePhysicsControl(PhysicsControl));
+
+    return R<void>::Success();
+  };
+
+  BIND_SYNC(apply_vehicle_light_state) << [this](
+      cr::ActorId ActorId,
+      cr::VehicleLightState LightState) -> R<void>
+  {
+    REQUIRE_CARLA_EPISODE();
+    auto ActorView = Episode->FindActor(ActorId);
+    if (!ActorView.IsValid())
+    {
+      RESPOND_ERROR("unable to apply actor light state: actor not found");
+    }
+    auto Vehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
+    if (Vehicle == nullptr)
+    {
+      RESPOND_ERROR("unable to apply actor light state: actor is not a vehicle");
+    }
+
+    Vehicle->SetVehicleLightState(FVehicleLightState(LightState));
 
     return R<void>::Success();
   };
@@ -851,6 +944,13 @@ void FCarlaServer::FPimpl::BindActions()
   {
     REQUIRE_CARLA_EPISODE();
     Episode->GetRecorder()->SetReplayerTimeFactor(time_factor);
+    return R<void>::Success();
+  };
+
+  BIND_SYNC(set_replayer_ignore_hero) << [this](bool ignore_hero) -> R<void>
+  {
+    REQUIRE_CARLA_EPISODE();
+    Episode->GetRecorder()->SetReplayerIgnoreHero(ignore_hero);
     return R<void>::Success();
   };
 
