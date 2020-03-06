@@ -12,6 +12,7 @@ import glob
 import os
 import sys
 import time
+import re
 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
@@ -27,6 +28,11 @@ import argparse
 import logging
 import random
 
+def find_weather_presets():
+    rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
+    name = lambda x: ' '.join(m.group(0) for m in rgx.finditer(x))
+    presets = [x for x in dir(carla.WeatherParameters) if re.match('[A-Z].+', x)]
+    return [(getattr(carla.WeatherParameters, x), name(x)) for x in presets]
 
 def main():
     argparser = argparse.ArgumentParser(
@@ -45,7 +51,7 @@ def main():
     argparser.add_argument(
         '-n', '--number-of-vehicles',
         metavar='N',
-        default=10,
+        default=35,
         type=int,
         help='number of vehicles (default: 10)')
     argparser.add_argument(
@@ -81,14 +87,18 @@ def main():
     try:
 
         world = client.get_world()
+        presets = find_weather_presets()
+        preset = [preset for preset in presets if preset[1] == 'Hard Snow Sunset'][0]
+        world.set_weather(preset[0])
+        print('\nWeather: %s\n' % preset[1])
+
         blueprints = world.get_blueprint_library().filter(args.filterv)
         blueprintsWalkers = world.get_blueprint_library().filter(args.filterw)
-
         if args.safe:
             blueprints = [x for x in blueprints if int(x.get_attribute('number_of_wheels')) == 4]
             blueprints = [x for x in blueprints if not x.id.endswith('isetta')]
             blueprints = [x for x in blueprints if not x.id.endswith('carlacola')]
-
+        blueprints = [x for x in blueprints if int(x.get_attribute('number_of_wheels')) == 4]
         spawn_points = world.get_map().get_spawn_points()
         number_of_spawn_points = len(spawn_points)
 
