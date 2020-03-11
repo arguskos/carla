@@ -89,7 +89,8 @@ class CameraManager(object):
                 attachment_type=self._camera_transforms[self.transform_index][1])
             # We need to pass the lambda a weak reference to self to avoid
             # circular reference.
-        # self.sensor.listen(lambda image: Renderer._parse_static_image(self.renderer, image))
+        self.weak_ref = weakref.ref(self)
+        self.sensor.listen(lambda image: Renderer._parse_static_image(self.weak_ref, image))
 
 class Renderer():
     def __init__(self):
@@ -115,8 +116,39 @@ class Renderer():
         self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
         if self.recording:
             image.save_to_disk('_out/%08d' % image.frame)
+display = None
+def simple_parse(image, image_converter=cc.Raw):
+    global display
+    image.convert(image_converter)
+    # self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
+    # draw_image(self.display, image)
+    array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
+    array = np.reshape(array, (image.height, image.width, 4))
+    array = array[:, :, :3]
+    array = array[:, :, ::-1]
+    surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
+    display.blit(surface, (0, 0))
+    pass 
 
+class SimpleCamera():
+    def __init__(self, world, vehicle):
+        self.world = world
+        blueprint = world.get_blueprint_library().find('sensor.camera.rgb')
+        # Modify the attributes of the blueprint to set image resolution and field of view.
+        # blueprint.set_attribute('image_size_x', '1920')
+        # blueprint.set_attribute('image_size_y', '1080')
+        # blueprint.set_attribute('fov', '110')
+        # transform = carla.Transform(carla.Location(x=0.8, z=1.7))
+        Attachment = carla.AttachmentType
+        pos_desc = (carla.Transform(carla.Location(x=-5.5, z=2.5), carla.Rotation(pitch=8.0)), Attachment.SpringArm)
+        self.sensor = world.spawn_actor(blueprint, pos_desc[0], attach_to=vehicle, attachment_type=pos_desc[-1])
 
+    def setup_listener(self, parse_function):
+        self.sensor.listen(lambda data: parse_function(data))
+
+    def destroy(self):
+        if self.sensor:
+            self.sensor.destroy()
 
 class CarlaSyncMode(object):
     """
@@ -135,16 +167,20 @@ class CarlaSyncMode(object):
         self.frame = None
         self.delta_seconds = 1.0 / kwargs.get('fps', 20)
         self._queues = []
-        self.sync = True
+        self.sync = False
         self._settings = None
         self._server_clock = pygame.time.Clock()
-        self.world.on_tick(self.on_world_tick)
         self.display = kwargs['display']
+        global display
+        display = self.display
         self.renderer = Renderer()
+        self.vehicle = kwargs.get('vehicle')
+        self.world.on_tick(self.on_world_tick)
         # self.weak_renderer = weakref.ref(self.renderer)
-        self.camera_manager = CameraManager(kwargs.get('vehicle'), None, 2.2, kwargs['display'], self.renderer)
-        self.camera_manager.transform_index = 0
-        self.camera_manager.set_sensor(0, notify=False)
+        # self.camera_manager = CameraManager(kwargs.get('vehicle'), None, 2.2, kwargs['display'], self.renderer)
+        # self.camera_manager.transform_index = 0
+        # self.camera_manager.set_sensor(0, notify=False)
+        self.camera = SimpleCamera(self.world, self.vehicle)
 
     def on_world_tick(self, timestamp):
         self._server_clock.tick()
@@ -152,6 +188,7 @@ class CarlaSyncMode(object):
         self.timestamp = timestamp
         self.frame = timestamp.frame
         self.simulation_time = timestamp.elapsed_seconds
+        self.dt = self.timestamp.delta_seconds
 
     def __enter__(self):
         self._settings = self.world.get_settings()
@@ -160,34 +197,38 @@ class CarlaSyncMode(object):
                 no_rendering_mode=False,
                 synchronous_mode=True,
                 fixed_delta_seconds=self.delta_seconds))
+            
+            def make_queue(register_event):
+                q = queue.Queue()
+                register_event(q.put)
+                self._queues.append(q)
 
-        def make_queue(register_event):
-            q = queue.Queue()
-            register_event(q.put)
-            self._queues.append(q)
-
-        make_queue(self.world.on_tick)
-        # for sensor in self.sensors:
-        make_queue(self.camera_manager.sensor.listen)
+            make_queue(self.world.on_tick)
+            make_queue(self.camera.sensor.listen)
+        else: 
+            self.frame = self.world.apply_settings(carla.WorldSettings(
+                no_rendering_mode=False,
+                synchronous_mode=False,
+                fixed_delta_seconds=0))
+            self.camera.setup_listener(simple_parse)
         return self
 
     def tick(self, timeout):
         if self.sync:
             self.frame = self.world.tick()
-        data = [self._retrieve_data(q, timeout) for q in self._queues]
-        if self.sync:
+            data = [self._retrieve_data(q, timeout) for q in self._queues]
             assert all(x.frame == self.frame for x in data)
-        image = data[1]
-        self.renderer._parse_image(image)
-        return data
+            image = data[1]
+            simple_parse(image)
+            # self.renderer._parse_image(image)
+            return data
 
     def render(self):
         self.renderer.render(self.display)
 
     def __exit__(self, *args, **kwargs):
-        self.camera_manager.sensor.destroy()
-        self.camera_manager.sensor = None
         self.world.apply_settings(self._settings)
+        self.camera.destroy()
 
     def _retrieve_data(self, sensor_queue, timeout):
         while True:
@@ -239,31 +280,30 @@ def main():
         vehicle = world.spawn_actor(
             random.choice(blueprint_library.filter('vehicle.toyota.prius')),
             start_pose)
-        vehicle.set_autopilot(True)
+        # vehicle.set_autopilot(True)
         
-        # vehicle_controller = VehicleController(vehicle, controller)
+        vehicle_controller = VehicleController(vehicle, controller)
         
  
       
         actor_list.append(vehicle)
 
-        with CarlaSyncMode(world, fps=2, vehicle=vehicle, display=display) as sync_mode:
+        with CarlaSyncMode(world, fps=30, vehicle=vehicle, display=display) as sync_mode:
             while True:
                 if should_quit():
                     return
                 controller.parse_events()
                 #clock.tick() # basicly same shit but less acurate 
-                clock.tick_busy_loop(60)
-
+                clock.tick()
                 # Advance the simulation and wait for the data.
-                snapshot, image_rgb = sync_mode.tick(timeout=2.0)
-                dt = snapshot.timestamp.delta_seconds
-                # dt2 = 1e-3 * clock.get_time()
-                # vehicle_controller.tick(dt)
-
-                sync_mode.render()
+                sync_mode.tick(timeout=2)
+                # snapshot = snapshot[0]
+                # dt = snapshot.timestamp.delta_seconds
+                vehicle_controller.tick(sync_mode.dt)
+                print(sync_mode.dt)
+                # sync_mode.render()
                 # image_semseg.convert(carla.ColorConverter.CityScapesPalette)
-                fps = round(1.0 / dt)
+                fps = round(1.0 / sync_mode.dt)
                 # Draw the display.
                 # draw_image(display, image_rgb)
                 # draw_image(display, image_semseg, blend=True)
@@ -271,7 +311,7 @@ def main():
                     font.render('% 5d FPS (real - client)' % clock.get_fps(), True, (255, 255, 255)),
                     (8, 10))
                 display.blit(
-                    font.render('% 5d FPS (simulated - server)' % fps, True, (255, 255, 255)),
+                    font.render('{}, {} FPS (simulated - server)'.format(fps, int(sync_mode.server_fps)), True, (255, 255, 255)),
                     (8, 28))
                 pygame.display.flip()
 
