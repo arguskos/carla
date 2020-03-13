@@ -10,6 +10,9 @@ import glob
 import os
 import sys
 import weakref
+import random
+import math
+# from navigation.agents.tools.misc import draw_waypoints
 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
@@ -19,9 +22,17 @@ try:
 except IndexError:
     pass
 
-import carla
+# ==============================================================================
+# -- add PythonAPI for release mode --------------------------------------------
+# ==============================================================================
+try:
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/carla')
+except IndexError:
+    pass
 
-import random
+import carla
+from agents.tools.misc import draw_waypoints
+
 
 try:
     import pygame
@@ -41,6 +52,7 @@ except ImportError:
 from controller import KeyboardControl
 from vehicle_controller import VehicleController
 from carla import ColorConverter as cc
+from client_bounding_boxes import ClientSideBoundingBoxes
 
 
 
@@ -133,6 +145,20 @@ def simple_parse(image, image_converter=cc.Raw):
 class SimpleCamera():
     def __init__(self, world, vehicle):
         self.world = world
+        self.sensors = [
+        ['sensor.camera.rgb', cc.Raw, 'Camera RGB', {}],
+        ['sensor.camera.depth', cc.Raw, 'Camera Depth (Raw)', {}],
+        ['sensor.camera.depth', cc.Depth, 'Camera Depth (Gray Scale)', {}],
+        ['sensor.camera.depth', cc.LogarithmicDepth, 'Camera Depth (Logarithmic Gray Scale)', {}],
+        ['sensor.camera.semantic_segmentation', cc.Raw, 'Camera Semantic Segmentation (Raw)', {}],
+        ['sensor.camera.semantic_segmentation', cc.CityScapesPalette,
+            'Camera Semantic Segmentation (CityScapes Palette)', {}],
+        #['sensor.lidar.ray_cast', None, 'Lidar (Ray-Cast)', {}],
+        ['sensor.camera.rgb', cc.Raw, 'Camera RGB Distorted',
+            {'lens_circle_multiplier': '3.0',
+            'lens_circle_falloff': '3.0',
+            'chromatic_aberration_intensity': '0.5',
+            'chromatic_aberration_offset': '0'}]]
         blueprint = world.get_blueprint_library().find('sensor.camera.rgb')
         # Modify the attributes of the blueprint to set image resolution and field of view.
         # blueprint.set_attribute('image_size_x', '1920')
@@ -140,15 +166,79 @@ class SimpleCamera():
         # blueprint.set_attribute('fov', '110')
         # transform = carla.Transform(carla.Location(x=0.8, z=1.7))
         Attachment = carla.AttachmentType
-        pos_desc = (carla.Transform(carla.Location(x=-5.5, z=2.5), carla.Rotation(pitch=8.0)), Attachment.SpringArm)
+        pos_desc = (
+            carla.Transform(carla.Location(x=-5.5, z=2.5), carla.Rotation(pitch=8.0)), Attachment.SpringArm)
+        VIEW_WIDTH = 800//2
+        VIEW_HEIGHT = 600//2
+        VIEW_FOV = 90
+        
+        calibration = np.identity(3)
+        calibration[0, 2] = VIEW_WIDTH / 2.0
+        calibration[1, 2] = VIEW_HEIGHT / 2.0
+        calibration[0, 0] = calibration[1, 1] = VIEW_WIDTH / (2.0 * np.tan(VIEW_FOV * np.pi / 360.0))
         self.sensor = world.spawn_actor(blueprint, pos_desc[0], attach_to=vehicle, attachment_type=pos_desc[-1])
+        self.sensor.calibration = calibration            
+
+    @staticmethod
+    def render(weak_self, image, image_converter=cc.Raw):
+        self = weak_self()
+        if not self:
+            return
+        global display
+        image.convert(image_converter)
+        # self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
+        # draw_image(self.display, image)
+        array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
+        array = np.reshape(array, (image.height, image.width, 4))
+        array = array[:, :, :3]
+        array = array[:, :, ::-1]
+        surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
+        display.blit(surface, (0, 0))
+
+    def setup_sensor(self, sensor_id=0):
+        if self.sensor:
+            self.sensor.destroy()
 
     def setup_listener(self, parse_function):
-        self.sensor.listen(lambda data: parse_function(data))
+        weak_self = weakref.ref(self)
+        self.sensor.listen(lambda data: parse_function(weak_self, data))
 
     def destroy(self):
         if self.sensor:
             self.sensor.destroy()
+
+class ObstacleSensor(object):
+    def __init__(self, parent_actor):
+        self.sensor = None
+        self._parent = parent_actor
+        world = self._parent.get_world()
+        bp = world.get_blueprint_library().find('sensor.other.obstacle')
+        bp.set_attribute('debug_linetrace', str(True))
+        self.sensor = world.spawn_actor(bp, carla.Transform(), attach_to=self._parent)
+        weak_self = weakref.ref(self)
+        self.sensor.listen(lambda event: ObstacleSensor._on_tick(weak_self, event))
+
+    def destroy(self):
+        self.sensor.destroy()
+
+    @staticmethod
+    def _on_tick(weak_self, event):
+        self = weak_self()
+        if not self:
+            return
+
+def get_vehicles_in_radius(vehicle, radius):
+    world = vehicle.get_world()
+    t = vehicle.get_transform()
+    vehicles = world.get_actors().filter('vehicle.*')
+    if len(vehicles) > 1:
+        distance = lambda l: math.sqrt((l.x - t.location.x)**2 + (l.y - t.location.y)**2 + (l.z - t.location.z)**2)
+        vehicles = [(distance(x.get_location()), x) for x in vehicles if x.id != vehicle.id]
+        for d, vehicle in sorted(vehicles):
+            if d > radius:
+                break
+        return list(zip(*vehicles))[1]
+    return []
 
 class CarlaSyncMode(object):
     """
@@ -167,7 +257,7 @@ class CarlaSyncMode(object):
         self.frame = None
         self.delta_seconds = 1.0 / kwargs.get('fps', 20)
         self._queues = []
-        self.sync = False
+        self.sync = True
         self._settings = None
         self._server_clock = pygame.time.Clock()
         self.display = kwargs['display']
@@ -181,6 +271,12 @@ class CarlaSyncMode(object):
         # self.camera_manager.transform_index = 0
         # self.camera_manager.set_sensor(0, notify=False)
         self.camera = SimpleCamera(self.world, self.vehicle)
+        self.setup_sensors()
+        self.bounding_drawer = ClientSideBoundingBoxes()
+        
+    def setup_sensors(self):
+        self.obstacle_sensor = ObstacleSensor(self.vehicle)
+
 
     def on_world_tick(self, timestamp):
         self._server_clock.tick()
@@ -210,10 +306,15 @@ class CarlaSyncMode(object):
                 no_rendering_mode=False,
                 synchronous_mode=False,
                 fixed_delta_seconds=0))
-            self.camera.setup_listener(simple_parse)
+            self.camera.setup_listener(SimpleCamera.render)
         return self
 
     def tick(self, timeout):
+        global display
+        vehicles = get_vehicles_in_radius(self.vehicle, 200)
+        boxes = ClientSideBoundingBoxes.get_bounding_boxes(vehicles, self.camera.sensor)
+        print(len(vehicles), len(boxes))
+        ClientSideBoundingBoxes.draw_bounding_boxes(display, boxes)
         if self.sync:
             self.frame = self.world.tick()
             data = [self._retrieve_data(q, timeout) for q in self._queues]
@@ -229,6 +330,7 @@ class CarlaSyncMode(object):
     def __exit__(self, *args, **kwargs):
         self.world.apply_settings(self._settings)
         self.camera.destroy()
+        self.obstacle_sensor.destroy()
 
     def _retrieve_data(self, sensor_queue, timeout):
         while True:
@@ -243,6 +345,7 @@ def get_font():
     font = default_font if default_font in fonts else fonts[0]
     font = pygame.font.match_font(font)
     return pygame.font.Font(font, 14)
+
 
 
 def should_quit():
@@ -274,7 +377,13 @@ def main():
         m = world.get_map()
         start_pose = m.get_spawn_points()[40]
         waypoint = m.get_waypoint(start_pose.location)
+        waypoints = []
 
+        for i in range(10):
+            waypoint = random.choice(waypoint.next(5))
+            waypoints.append(waypoint)
+        
+        print(waypoints)
         blueprint_library = world.get_blueprint_library()
 
         vehicle = world.spawn_actor(
@@ -297,10 +406,10 @@ def main():
                 clock.tick()
                 # Advance the simulation and wait for the data.
                 sync_mode.tick(timeout=2)
+                # draw_waypoints(world, waypoints)
                 # snapshot = snapshot[0]
                 # dt = snapshot.timestamp.delta_seconds
                 vehicle_controller.tick(sync_mode.dt)
-                print(sync_mode.dt)
                 # sync_mode.render()
                 # image_semseg.convert(carla.ColorConverter.CityScapesPalette)
                 fps = round(1.0 / sync_mode.dt)
