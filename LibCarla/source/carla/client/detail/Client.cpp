@@ -273,6 +273,10 @@ namespace detail {
     _pimpl->AsyncCall("set_actor_autopilot", vehicle, enabled);
   }
 
+  void Client::CustomBpAction(rpc::ActorId vehicle) {
+    _pimpl->AsyncCall("custom_bp_action", vehicle);
+  }
+
   void Client::ApplyControlToVehicle(rpc::ActorId vehicle, const rpc::VehicleControl &control) {
     _pimpl->AsyncCall("apply_control_to_vehicle", vehicle, control);
   }

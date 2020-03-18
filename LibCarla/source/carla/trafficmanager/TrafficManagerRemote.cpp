@@ -176,6 +176,13 @@ void TrafficManagerRemote::SetKeepRightPercentage(const ActorPtr &_actor, const 
   client.SetKeepRightPercentage(actor, percentage);
 }
 
+
+void TrafficManagerRemote::DrawTrajectory(const ActorPtr &_actor, bool state) {
+  carla::rpc::Actor actor(_actor->Serialize());
+  client.DrawTrajectory(actor, state);
+}
+
+
 void TrafficManagerRemote::ResetAllTrafficLights() {
   client.ResetAllTrafficLights();
 }

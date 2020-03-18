@@ -27,6 +27,9 @@ namespace client {
     explicit Vehicle(ActorInitializer init);
 
     using ActorState::GetBoundingBox;
+    
+    // My carla
+    void CustomBpAction();
 
     /// Switch on/off this vehicle's autopilot.
     void SetAutopilot(bool enabled = true);

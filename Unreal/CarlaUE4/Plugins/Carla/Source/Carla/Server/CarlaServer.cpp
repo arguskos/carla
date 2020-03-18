@@ -38,6 +38,7 @@
 #include <carla/rpc/WalkerControl.h>
 #include <carla/rpc/WeatherParameters.h>
 #include <carla/streaming/Server.h>
+#include <iostream>
 #include <compiler/enable-ue4-macros.h>
 
 #include <vector>
@@ -729,6 +730,24 @@ void FCarlaServer::FPimpl::BindActions()
     Controller->ApplyWalkerControl(Control);
     return R<void>::Success();
   };
+  BIND_SYNC(custom_bp_action) << [this](cr::ActorId ActorId)
+	  -> R<void>
+  {
+	  REQUIRE_CARLA_EPISODE();
+	  auto ActorView = Episode->FindActor(ActorId);
+	  if (!ActorView.IsValid())
+	  {
+		  RESPOND_ERROR("unable to set autopilot: actor not found");
+	  }
+	  auto Vehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
+	  if (Vehicle == nullptr)
+	  {
+		  RESPOND_ERROR("unable to set autopilot: actor does not support autopilot");
+	  }
+	Vehicle->Something();
+	return R<void>::Success();
+
+  };
 
   BIND_SYNC(set_actor_autopilot) << [this](
       cr::ActorId ActorId,
@@ -1003,6 +1022,7 @@ void FCarlaServer::FPimpl::BindActions()
         return result.GetError();
       },
       [=](auto, const C::DestroyActor &c) {         MAKE_RESULT(destroy_actor(c.actor)); },
+      // [=](auto, const C::CustomBpAction &c) {       MAKE_RESULT(custom_bp_action(c.actor)); },
       [=](auto, const C::ApplyVehicleControl &c) {  MAKE_RESULT(apply_control_to_vehicle(c.actor, c.control)); },
       [=](auto, const C::ApplyWalkerControl &c) {   MAKE_RESULT(apply_control_to_walker(c.actor, c.control)); },
       [=](auto, const C::ApplyTransform &c) {       MAKE_RESULT(set_actor_transform(c.actor, c.transform)); },

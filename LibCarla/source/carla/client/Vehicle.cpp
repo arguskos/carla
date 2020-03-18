@@ -11,6 +11,7 @@
 #include "carla/client/TrafficLight.h"
 #include "carla/Memory.h"
 #include "carla/rpc/TrafficLightState.h"
+#include <iostream>
 
 #include "carla/trafficmanager/TrafficManager.h"
 
@@ -41,6 +42,10 @@ namespace client {
       tm.UnregisterVehicles({shared_from_this()});
     }
   }
+  void Vehicle::CustomBpAction() {
+      GetEpisode().Lock()->CustomBpAction(*this);
+  }
+
 
   void Vehicle::ApplyControl(const Control &control) {
     if (!_is_control_sticky || (control != _control)) {

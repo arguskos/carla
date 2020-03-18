@@ -51,6 +51,7 @@ ACarlaWheeledVehicle::~ACarlaWheeledVehicle() {}
 void ACarlaWheeledVehicle::BeginPlay()
 {
   Super::BeginPlay();
+  Something();
 
   float FrictionScale = 3.5f;
 

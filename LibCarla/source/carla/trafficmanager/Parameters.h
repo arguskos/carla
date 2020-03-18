@@ -11,6 +11,7 @@
 
 #include "carla/client/Actor.h"
 #include "carla/client/Vehicle.h"
+#include "carla/client/Waypoint.h"
 #include "carla/Memory.h"
 #include "carla/rpc/ActorId.h"
 
@@ -56,6 +57,10 @@ namespace traffic_manager {
     AtomicMap<ActorId, float> perc_ignore_vehicles;
     /// Map containing % of keep right rule.
     AtomicMap<ActorId, float> perc_keep_right;
+    //make conatingig traj?
+    AtomicMap<ActorId, bool> draw_traj;
+    //Trajectory waypoint
+    AtomicMap<ActorId, carla::SharedPtr<cc::Waypoint>> trajectory;
     /// Synchronous mode switch.
     std::atomic<bool> synchronous_mode {false};
     /// Distance Margin
@@ -102,6 +107,8 @@ namespace traffic_manager {
     /// Method to query percentage probability of keep right rule for a vehicle.
     float GetKeepRightPercentage(const ActorPtr &actor);
 
+    bool GetDrawTrajectory(const ActorPtr &actor);
+
     /// Method to query auto lane change rule for a vehicle.
     bool GetAutoLaneChange(const ActorPtr &actor);
 
@@ -138,6 +145,9 @@ namespace traffic_manager {
     /// Method to set probabilistic preference to keep on the right lane.
     void SetKeepRightPercentage(const ActorPtr &actor,const float percentage);
 
+    //Draw trajectory
+    void DrawTrajectory(const ActorPtr &actor, bool state);
+
     /// Method to get synchronous mode.
     bool GetSynchronousMode();
 
@@ -149,6 +159,9 @@ namespace traffic_manager {
 
     /// Set Synchronous mode time out.
     void SetSynchronousModeTimeOutInMiliSecond(const double time);
+
+    // Add trajectory point
+    void AddTrajectory(const ActorPtr &actor, const SharedPtr<cc::Waypoint> traj_point);
 
     /// Synchronous mode time out variable.
     std::chrono::duration<double, std::milli> synchronous_time_out;

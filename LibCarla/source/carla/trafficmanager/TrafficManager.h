@@ -220,6 +220,14 @@ public:
     }
   }
 
+  void DrawTrajectory(const ActorPtr &actor, bool state) {
+      TrafficManagerBase* tm_ptr = GetTM(_port);
+      if (tm_ptr != nullptr) {
+        tm_ptr->DrawTrajectory(actor, state);
+      }
+
+  }
+
 private:
 
   void CreateTrafficManagerServer(

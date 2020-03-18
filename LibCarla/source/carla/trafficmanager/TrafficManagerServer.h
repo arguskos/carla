@@ -150,6 +150,10 @@ public:
         tm->SetKeepRightPercentage(carla::client::detail::ActorVariant(actor).Get(tm->GetEpisodeProxy()), percentage);
       });
 
+      server->bind("draw_trajectory", [=](carla::rpc::Actor actor, bool state) {
+        tm->DrawTrajectory(carla::client::detail::ActorVariant(actor).Get(tm->GetEpisodeProxy()), state);
+      });
+
       /// Method to set synchronous mode.
       server->bind("set_synchronous_mode", [=](const bool mode) {
         tm->SetSynchronousMode(mode);

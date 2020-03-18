@@ -45,8 +45,8 @@ public:
 public:
 
   // My Carla
-  //UFUNCTION(BlueprintImplementableEvent)
-  //virtual void Dead();
+  UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "MyCarla")
+  void Something();
   // UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "MyCarla")
   // void OnDead();
   // virtual void BeginDestroy() override;

@@ -163,6 +163,9 @@ namespace detail {
     void SetActorAutopilot(
         rpc::ActorId vehicle,
         bool enabled);
+    
+    //My carla
+    void CustomBpAction(rpc::ActorId vehicle);
 
     void ApplyControlToVehicle(
         rpc::ActorId vehicle,

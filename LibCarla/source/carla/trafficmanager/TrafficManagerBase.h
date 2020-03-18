@@ -102,6 +102,10 @@ public:
 
   /// Method to set probabilistic preference to keep on the right lane.
   virtual void SetKeepRightPercentage(const ActorPtr &actor,const float percentage) = 0;
+  
+  // Method to draw trajectory for one actor 
+  virtual void DrawTrajectory(const ActorPtr &actor, bool state) = 0;
+
 
 protected:
 

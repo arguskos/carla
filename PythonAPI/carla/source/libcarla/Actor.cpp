@@ -110,6 +110,7 @@ void export_actor() {
       .add_property("bounding_box", CALL_RETURNING_COPY(cc::Vehicle, GetBoundingBox))
       .def("apply_control", &cc::Vehicle::ApplyControl, (arg("control")))
       .def("get_control", &cc::Vehicle::GetControl)
+      .def("custom_bp_action", &cc::Vehicle::CustomBpAction)
       .def("set_light_state", &cc::Vehicle::SetLightState, (arg("light_state")))
       .def("get_light_state", CONST_CALL_WITHOUT_GIL(cc::Vehicle, GetLightState))
       .def("apply_physics_control", &cc::Vehicle::ApplyPhysicsControl, (arg("physics_control")))

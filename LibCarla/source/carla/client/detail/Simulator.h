@@ -352,6 +352,10 @@ namespace detail {
       _client.ApplyControlToVehicle(vehicle.GetId(), control);
     }
 
+    void CustomBpAction(Vehicle &vehicle){
+      _client.CustomBpAction(vehicle.GetId());
+    }
+
     void ApplyControlToVehicle(Vehicle &vehicle, const rpc::VehicleControl &control) {
       _client.ApplyControlToVehicle(vehicle.GetId(), control);
     }

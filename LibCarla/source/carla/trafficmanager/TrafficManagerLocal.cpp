@@ -201,6 +201,10 @@ void TrafficManagerLocal::SetKeepRightPercentage(const ActorPtr &actor, const fl
   parameters.SetKeepRightPercentage(actor, percentage);
 }
 
+void TrafficManagerLocal::DrawTrajectory(const ActorPtr &actor, bool state) {
+  parameters.DrawTrajectory(actor, state);
+}
+
 bool TrafficManagerLocal::CheckAllFrozen(TLGroup tl_to_freeze) {
   for (auto& elem : tl_to_freeze) {
     if (!elem->IsFrozen() || elem->GetState() != TLS::Red) {

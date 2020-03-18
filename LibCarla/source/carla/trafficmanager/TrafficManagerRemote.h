@@ -100,6 +100,8 @@ public:
   /// Method to set probabilistic preference to keep on the right lane.
   void SetKeepRightPercentage(const ActorPtr &actor, const float percentage);
 
+  void DrawTrajectory(const ActorPtr &actor, bool state);
+
   /// Method to provide synchronous tick
   bool SynchronousTick();
 

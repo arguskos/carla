@@ -179,6 +179,11 @@ public:
     _client->call("set_percentage_keep_right_rule", actor, percentage);
   }
 
+  void DrawTrajectory(const carla::rpc::Actor &actor, bool state) {
+    DEBUG_ASSERT(_client != nullptr);
+    _client->call("draw_trajectory", actor, state);
+  }
+
 private:
 
   /// RPC client.

@@ -184,6 +184,10 @@ namespace traffic_manager {
 
     /// Method to set probabilistic preference to keep on the right lane.
     void SetKeepRightPercentage(const ActorPtr &actor, const float percentage);
+    
+    //Draw trajectory for an actor
+    void DrawTrajectory(const ActorPtr &actor, bool state);
+
   };
 
 } // namespace traffic_manager

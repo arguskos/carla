@@ -6,6 +6,7 @@
 
 #include "carla/trafficmanager/LocalizationStage.h"
 #include "carla/client/DebugHelper.h"
+#include <iostream>
 
 namespace carla {
 namespace traffic_manager {
@@ -198,7 +199,11 @@ namespace LocalizationConstants {
         }
         PushWaypoint(waypoint_buffer, actor_id, next_wp);
       }
-
+      bool draw_traj = parameters.GetDrawTrajectory(vehicle);
+      if (draw_traj) {
+        DrawBuffer(waypoint_buffer);
+        parameters.AddTrajectory(vehicle, (waypoint_buffer.at(0)->GetWaypoint()));
+      }
       // Updating geodesic grid position for actor.
       track_traffic.UpdateGridPosition(actor_id, waypoint_buffer);
 
@@ -409,9 +414,9 @@ namespace LocalizationConstants {
 
     for (uint64_t i = 0u; i < buffer.size(); ++i) {
       if(buffer.at(i)->GetWaypoint()->IsJunction()){
-        debug_helper.DrawPoint(buffer.at(i)->GetLocation() + cg::Location(0.0f,0.0f,2.0f), 0.3f, {0u, 0u, 255u}, 0.05f);
+        debug_helper.DrawPoint(buffer.at(i)->GetLocation() + cg::Location(0.0f,0.0f,2.0f), 0.3f, {0u, 0u, 255u, 10}, 0.05f);
       } else {
-        debug_helper.DrawPoint(buffer.at(i)->GetLocation() + cg::Location(0.0f,0.0f,2.0f), 0.3f, {0u, 255u, 255u}, 0.05f);
+        debug_helper.DrawPoint(buffer.at(i)->GetLocation() + cg::Location(0.0f,0.0f,2.0f), 0.3f, {0u, 255u, 255u, 10}, 0.05f);
       }
     }
   }

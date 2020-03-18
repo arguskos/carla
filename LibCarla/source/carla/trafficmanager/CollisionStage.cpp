@@ -328,9 +328,15 @@ namespace CollisionStageConstants {
       geodesic_boundary.insert(geodesic_boundary.end(), left_boundary.begin(), left_boundary.end());
 
       geodesic_boundaries.insert({actor->GetId(), geodesic_boundary});
+      DrawBoundary(geodesic_boundary);
+      DrawBoundary(right_boundary);
+      DrawBoundary(left_boundary);
+      DrawBoundary(bbox);
+
+
       return geodesic_boundary;
     } else {
-
+      DrawBoundary(bbox);
       geodesic_boundaries.insert({actor->GetId(), bbox});
       return bbox;
     }

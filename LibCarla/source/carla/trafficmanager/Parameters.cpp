@@ -69,6 +69,12 @@ void Parameters::SetKeepRightPercentage(const ActorPtr &actor, const float perce
   perc_keep_right.AddEntry(entry);
 }
 
+void Parameters::DrawTrajectory(const ActorPtr &actor, bool state) {
+
+  const auto entry = std::make_pair(actor->GetId(), state);
+  draw_traj.AddEntry(entry);
+}
+
 void Parameters::SetAutoLaneChange(const ActorPtr &actor, const bool enable) {
 
   const auto entry = std::make_pair(actor->GetId(), enable);
@@ -152,6 +158,17 @@ float Parameters::GetKeepRightPercentage(const ActorPtr &actor) {
   perc_keep_right.RemoveEntry(actor_id);
 
   return percentage;
+}
+
+bool Parameters::GetDrawTrajectory(const ActorPtr &actor) {
+  const ActorId actor_id = actor->GetId();
+  bool draw_trajectory = false;
+
+  if (draw_traj.Contains(actor_id)) {
+    draw_trajectory = draw_traj.GetValue(actor_id);
+  }
+
+  return draw_trajectory; 
 }
 
 bool Parameters::GetAutoLaneChange(const ActorPtr &actor) {
@@ -259,6 +276,16 @@ float Parameters::GetPercentageIgnoreVehicles(const ActorPtr &actor) {
 
   return percentage;
 }
+
+  void Parameters::AddTrajectory(const ActorPtr &actor, const SharedPtr<cc::Waypoint> traj_point) {
+      const ActorId actor_id = actor->GetId();
+      if (trajectory.Contains(actor_id)) {
+        trajectory.GetValue(actor_id) = traj_point;
+      } else {
+        trajectory.AddEntry({actor_id, traj_point});
+      }
+  }
+
 
 } // namespace traffic_manager
 } // namespace carla
