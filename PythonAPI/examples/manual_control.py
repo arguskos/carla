@@ -157,9 +157,6 @@ def get_actor_display_name(actor, truncate=250):
 class World(object):
     def __init__(self, carla_world, hud, args):
         self.world = carla_world
-        settings = self.world.get_settings()
-        settings.fixed_delta_seconds = 0.05
-        self.world.apply_settings(settings)
         self.actor_role_name = args.rolename
         try:
             self.map = self.world.get_map()
@@ -984,7 +981,7 @@ class CameraManager(object):
             array = array[:, :, :3]
             array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
-        if self.recording or True:
+        if self.recording:
             image.save_to_disk('_out/%08d' % image.frame)
 
 

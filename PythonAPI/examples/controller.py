@@ -45,13 +45,13 @@ class KeyboardControl(object):
         self.right = False
         self.left = False  
         self.back = False
-        self.action_dict = []
+        self.action_dict = {}
         self.enabled_keys = []
         # self.client 
         pass
 
-    def add_action(self, key, actioin):
-        assert key in self.action_dict, "key is already exist"
+    def add_action(self, key, action):
+        assert not key in self.action_dict, "key is already exist"
         self.action_dict[key] = action
     
     def remove_action(self, action):
@@ -62,8 +62,8 @@ class KeyboardControl(object):
             if event.type == pygame.QUIT:
                 return True
             if event.type == pygame.KEYUP:
-                if event.key in self.action_dict:
-                    self.action_dict[event.key]()
+                if chr(event.key) in self.action_dict:
+                    self.action_dict[chr(event.key)]()
         keys = pygame.key.get_pressed()
         self.forward = keys[K_UP] or keys[K_w]
         self.back = keys[K_DOWN] or keys[K_s]
